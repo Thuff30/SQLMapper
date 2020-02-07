@@ -31,7 +31,8 @@ public class SQLMapper {
         System.out.println(dboptions);
         dbcolumns = findColumns(conn,dboptions);
         
-        
+    }
+    
         public static Connection dbconnect(String MYSQL_URL, String user, String pass){
             String JDBCDRIVER_MYSQL = "com.mysql.cj.jdbc.Driver";
             Connection conn = null;
@@ -162,5 +163,3 @@ public class SQLMapper {
             return null;
         }
     }
-    
-}
