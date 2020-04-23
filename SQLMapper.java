@@ -81,7 +81,8 @@ public class SQLMapper {
             Class.forName(JDBCDRIVER_MYSQL);
             System.out.println("Connecting to the server and database provided");
             conn = DriverManager.getConnection(MYSQL_URL, user, pass);
-            System.out.println("Database connection successful"); 
+            System.out.println("Database connection successful");
+            
         }catch(SQLException se){
             se.printStackTrace();
         }catch(Exception e){
@@ -173,7 +174,7 @@ public class SQLMapper {
             }catch(Exception e){
                 e.printStackTrace();
             }
-        System.out.println(tables);
+        System.out.println("Tables: " +tables);
         return tables;
     }
 
@@ -209,7 +210,7 @@ public class SQLMapper {
 
                 }
                 stmt.close();
-                System.out.println(columns);
+                System.out.println("Columns: " +columns);
                 System.out.println();
             }catch(SQLException se){
                 se.printStackTrace();
@@ -257,7 +258,7 @@ public class SQLMapper {
             }
 
             stmt.close();
-            System.out.println(constraints);
+            System.out.println("Constraints: " +constraints);
         }catch(SQLException se){
             se.printStackTrace();
         }catch(Exception e){
@@ -268,11 +269,10 @@ public class SQLMapper {
 
     public static TreeMap<String,String> findUsers (Connection conn, String targetDB){
         TreeMap<String, String> userList = new TreeMap<String,String>();
-        String userQuery = "SELECT * FROM MYSQL.USER;";
+        String userQuery = "SELECT * FROM MYSQL.USER WHERE User != 'mysql.infoschema' AND User != 'mysql.session' AND User != 'mysql.sys';";
         int tick=1;
         try{
             Statement stmt = conn.createStatement();
-            stmt.executeQuery("USE " +targetDB+ ";");
             ResultSet rs1=stmt.executeQuery(userQuery);
 
             while(rs1.next()){
@@ -303,8 +303,11 @@ public class SQLMapper {
                 userList.put("Alter Routine-" +tick, rs1.getString("Alter_routine_priv"));
                 userList.put("Create User-" +tick, rs1.getString("Create_user_priv"));
                 userList.put("Max Connections-" +tick, rs1.getString("max_connections"));
-                userList.put("Max User Connections-" +tick, rs1.getString("max_user_conections"));
+                
+                tick++;
             }
+            
+            
             rs1.close();
             stmt.close();
 
@@ -313,27 +316,30 @@ public class SQLMapper {
         }catch(Exception e){
             e.printStackTrace();
         }
+        System.out.println("User List: " +userList);
         return userList;
     }
 
     public static TreeMap<String, String> findTabPriv (Connection conn, String targetDB, TreeMap<String, String> users){
         TreeMap<String, String> tablePriv = new TreeMap<String, String>();
         String tabPrivQuery = "SHOW GRANTS FOR ";
+        ResultSet rs1;
         int tick=1;
         int secTick=1;
         try{
             Statement stmt = conn.createStatement();
-            stmt.executeQuery("USE " +targetDB+ ";");
-
             for(int ts =0; ts<=users.size()-1; ts++){    
-                ResultSet rs1=stmt.executeQuery(tabPrivQuery +users.get("User-" +tick)+ "@" +users.get("Host-" +tick)+ "';");
+                rs1=stmt.executeQuery("SHOW GRANTS FOR '" +users.get("User-" +tick)+ "'@'" +users.get("Host-" +tick)+ "';");
 
                 while(rs1.next()){
                     tablePriv.put(users.get("User-" +tick)+ "-" +secTick, rs1.getString("Grants for " +users.get("User-" +tick)+ "@" +users.get("Host-" +tick)));
                     secTick++;
                 }
                 tick++;
+                rs1.close();
             }
+            stmt.close();
+            System.out.println("Table Privileges: " +tablePriv);
         }catch(SQLException se){
             se.printStackTrace();
         }catch(Exception e){
