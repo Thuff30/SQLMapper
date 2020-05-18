@@ -8,7 +8,8 @@ import java.util.List;
 import java.sql.*;
 import java.util.Collections;
 import java.util.Scanner;
-
+import java.io.FileWriter;
+import java.io.IOException;
 
 public class SQLMapper {
     
@@ -22,15 +23,18 @@ public class SQLMapper {
         String user = "root";
         String pass = "Sjrhdu3485";
         String targetDB = "shipping";
+        String tablefile = "Tables";
+        String usersfile = "Users and Roles";
         ArrayList<String> tables = new ArrayList<String>();
-        TreeMap<String,String> userList = new TreeMap<String,String>();
+
         HashMap<String, String> connectInfo = new HashMap();
         HashMap<String, String> dboptions = new HashMap();
         TreeMap<String, String> dbcolumns = new TreeMap();
-        TreeMap<String, String> tablePriveleges = new TreeMap();
         TreeMap<String, String> rolePriveleges = new TreeMap();
         TreeMap<String, String> tableConstraints = new TreeMap();
+        TreeMap<String, String> userList = new TreeMap();
         TreeMap<String, String> roles = new TreeMap();
+        TreeMap<String, String> tablePriveleges = new TreeMap();
         
         connectInfo = getDBInfo();
         Connection conn = dbconnect(MYSQL_URL, user, pass);
@@ -39,9 +43,10 @@ public class SQLMapper {
         tables = findTables(conn, targetDB);
         dbcolumns = findColumns(conn, targetDB, tables);
         tableConstraints = findConst(conn, targetDB, tables);
-        userList = findUsers(conn, targetDB);
+        //userList = findUsers(conn, targetDB);
         tablePriveleges = findTabPriv(conn, targetDB, userList);
         //rolePriveleges = findRolePriv(conn, targetDB);
+        CreateTableCSV(tables, dbcolumns, tableConstraints);
         
     }
     
@@ -187,13 +192,13 @@ public class SQLMapper {
                 Statement stmt = conn.createStatement();
                 stmt.executeQuery(useDB);
 
-                //declare/reset integer to hold number of columns
-                int tick = 1;
-
                 //Loop through all tables in the database
                 for(int ts =0; ts<=tables.size()-1; ts++){  
                     ResultSet rs1 = stmt.executeQuery("DESCRIBE " +tables.get(ts));
 
+                    //declare/reset integer to hold number of columns
+                    int tick = 1;
+                    
                     //Loop through all columns in the table and store
                     while(rs1.next()){
                         columns.put(tables.get(ts) + "-" + tick + "-Field", rs1.getString("Field"));
@@ -204,7 +209,9 @@ public class SQLMapper {
                         columns.put(tables.get(ts) + "-" + tick + "-Extra", rs1.getString("Extra"));
                         tick++;
                     }
-
+                    //Enter a count of columns for table
+                    columns.put(tables.get(ts) + "-Total", Integer.toString(tick - 1));
+                    
                     //Close results, statement and connection
                      rs1.close();
 
@@ -227,6 +234,7 @@ public class SQLMapper {
         String constQuery2= "' AND CONSTRAINT_TYPE != 'PRIMARY KEY' OR 'FOREIGN KEY';";
         String useDB = "USE " +targetDB+ ";";
         int tick = 1;
+        int tick2 = 1;
         try{
             Statement stmt = conn.createStatement();
             stmt.executeQuery(useDB);
@@ -242,18 +250,20 @@ public class SQLMapper {
                 tick++;
                 }
                 rs1.close();
+                constraints.put(tables.get(ts)+ "-Total", Integer.toString(tick - 1));
 
                 ResultSet rs2= stmt.executeQuery(constQuery1+ tables.get(ts)+ constQuery2);
 
                 while(rs2.next()){
-                    constraints.put(tables.get(ts)+ "-" +tick+ "-Constraint Schema", rs2.getString("CONSTRAINT_SCHEMA"));
-                    constraints.put(tables.get(ts)+ "-" +tick+ "-Constraint Name", rs2.getString("CONSTRAINT_NAME"));
-                    constraints.put(tables.get(ts)+ "-" +tick+ "-Table Schema", rs2.getString("TABLE_SCHEMA"));
-                    constraints.put(tables.get(ts)+ "-" +tick+ "-Constraint Type", rs2.getString("CONSTRAINT_TYPE"));
-                    constraints.put(tables.get(ts)+ "-" +tick+ "-Enforced", rs2.getString("ENFORCED"));
-                tick++;
+                    constraints.put(tables.get(ts)+ "-" +tick2+ "-Constraint Schema", rs2.getString("CONSTRAINT_SCHEMA"));
+                    constraints.put(tables.get(ts)+ "-" +tick2+ "-Constraint Name2", rs2.getString("CONSTRAINT_NAME"));
+                    constraints.put(tables.get(ts)+ "-" +tick2+ "-Table Schema", rs2.getString("TABLE_SCHEMA"));
+                    constraints.put(tables.get(ts)+ "-" +tick2+ "-Constraint Type", rs2.getString("CONSTRAINT_TYPE"));
+                    constraints.put(tables.get(ts)+ "-" +tick2+ "-Enforced", rs2.getString("ENFORCED"));
+                tick2++;
                 }
                 rs2.close();
+                constraints.put(tables.get(ts)+ "-Total2", Integer.toString(tick2 - 1));
 
             }
 
@@ -268,7 +278,7 @@ public class SQLMapper {
     }
 
     public static TreeMap<String,String> findUsers (Connection conn, String targetDB){
-        TreeMap<String, String> userList = new TreeMap<String,String>();
+        TreeMap<String, String> userList = new TreeMap();
         String userQuery = "SELECT * FROM MYSQL.USER WHERE User != 'mysql.infoschema' AND User != 'mysql.session' AND User != 'mysql.sys';";
         int tick=1;
         try{
@@ -278,7 +288,7 @@ public class SQLMapper {
             while(rs1.next()){
                 userList.put("Host-" +tick, rs1.getString("Host"));
                 userList.put("User-" +tick, rs1.getString("User"));
-                userList.put("Select-" +tick, rs1.getString("Select_priv"));
+              userList.put("Select-" +tick, rs1.getString("Select_priv"));
                 userList.put("Insert-" +tick, rs1.getString("Insert_priv"));
                 userList.put("Update-" +tick, rs1.getString("Update_priv"));
                 userList.put("Delete-" +tick, rs1.getString("Delete_priv"));
@@ -321,24 +331,28 @@ public class SQLMapper {
     }
 
     public static TreeMap<String, String> findTabPriv (Connection conn, String targetDB, TreeMap<String, String> users){
-        TreeMap<String, String> tablePriv = new TreeMap<String, String>();
+        TreeMap<String, String> tablePriv = new TreeMap();
         String tabPrivQuery = "SHOW GRANTS FOR ";
         ResultSet rs1;
         int tick=1;
         int secTick=1;
         try{
             Statement stmt = conn.createStatement();
-            for(int ts =0; ts<=users.size()-1; ts++){    
-                rs1=stmt.executeQuery("SHOW GRANTS FOR '" +users.get("User-" +tick)+ "'@'" +users.get("Host-" +tick)+ "';");
+            for(int ts =0; ts<=users.size()-1; ts++){
+                while(users.get("User-" +tick)!= "null"){
+                    rs1=stmt.executeQuery("SHOW GRANTS FOR '" +users.get("User-" +tick)+ "'@'" +users.get("Host-" +tick)+ "';");
 
-                while(rs1.next()){
-                    tablePriv.put(users.get("User-" +tick)+ "-" +secTick, rs1.getString("Grants for " +users.get("User-" +tick)+ "@" +users.get("Host-" +tick)));
-                    secTick++;
+                    while(rs1.next()){
+                        tablePriv.put(users.get("User-" +tick)+ "-" +secTick, rs1.getString("Grants for " +users.get("User-" +tick)+ "@" +users.get("Host-" +tick)));
+                        secTick++;
+                    }
+                    rs1.close();
                 }
                 tick++;
-                rs1.close();
             }
             stmt.close();
+            conn.close();
+            
             System.out.println("Table Privileges: " +tablePriv);
         }catch(SQLException se){
             se.printStackTrace();
@@ -346,5 +360,57 @@ public class SQLMapper {
             e.printStackTrace();
         }
         return tablePriv;
+    }
+    
+    public static void CreateTableCSV(ArrayList tables, TreeMap<String, String> columns, TreeMap<String, String> constraints){
+        FileWriter fileOut = null;
+        String filename="Tables.csv";
+        try{
+            fileOut = new FileWriter(filename);
+            
+            for(int ts=0; ts<tables.size()-1; ts++){
+                int colnum=Integer.parseInt(columns.get(tables.get(ts)+"-Total"));
+                fileOut.append("\n" +tables.get(ts)+ " Columns\n");
+                fileOut.append("Column Name, Data Type, Default Value, Null Allowed, Key Type, Extra\n");
+                
+                for(int cs=1; cs<=colnum; cs++){
+                    fileOut.append(columns.get(tables.get(ts)+ "-" +cs+ "-Field") +","+
+                            columns.get(tables.get(ts)+ "-" +cs+ "-Type") +","+
+                            columns.get(tables.get(ts)+ "-" +cs+ "-Default") +","+
+                            columns.get(tables.get(ts)+ "-" +cs+ "-Null") +","+
+                            columns.get(tables.get(ts)+ "-" +cs+ "-Key") +","+
+                            columns.get(tables.get(ts)+ "-" +cs+ "-Extra") +"\n");
+                }
+                int constnum1=Integer.parseInt(constraints.get(tables.get(ts)+ "-Total"));
+                fileOut.append("\n" +tables.get(ts)+ " Keys\nConstraint Name, Column Name, Referenced Column, Referenced Table\n");
+                for(int cs=1; cs<= constnum1; cs++){
+                    fileOut.append(constraints.get(tables.get(ts)+ "-" +cs+ "-Constraint Name")+ "," +
+                            constraints.get(tables.get(ts)+ "-" +cs+ "-Column Name")+ "," +
+                            constraints.get(tables.get(ts)+ "-" +cs+ "-Referenced Column")+ "," +
+                            constraints.get(tables.get(ts)+ "-" +cs+ "-Referenced Table")+ "\n");
+                }
+                int constnum2 = Integer.parseInt(constraints.get(tables.get(ts)+ "-Total2"));
+                fileOut.append("\n"+ tables.get(ts)+ " Constraints\nConstraint Name, Constraint Type, Enforced, Constraint Schema, Constraint Table\n");
+                for(int cs=1; cs<=constnum2; cs++){
+                    fileOut.append(constraints.get(tables.get(ts)+ "-" +cs+ "-Constraint Name2")+ "," +
+                            constraints.get(tables.get(ts)+ "-" +cs+ "-Constraint Type")+ "," +
+                            constraints.get(tables.get(ts)+ "-" +cs+ "-Enforced")+ "," +
+                            constraints.get(tables.get(ts)+ "-" +cs+ "-Constraint Scema")+ "," +
+                            constraints.get(tables.get(ts)+ "-" +cs+ "-Constraint Table")+ "\n");
+                }
+            }
+        }catch(Exception e){
+            System.out.println("Error in CsvFileWriter !!!");
+            e.printStackTrace();
+        }finally {
+             
+            try{
+                fileOut.flush();
+                fileOut.close();
+            }catch(IOException e){
+                System.out.println("Error while flushing/closing fileWriter !!!");
+                e.printStackTrace();
+            }
+        }
     }
 }
