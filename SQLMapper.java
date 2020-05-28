@@ -18,11 +18,11 @@ public class SQLMapper {
        
         String host = "localhost";
         String port = "3306";
-        String database = "shipping";
+        String database = "lessonschedule";
         String MYSQL_URL = "jdbc:mysql://" +host+ ":" +port+ "/" +database;
         String user = "root";
         String pass = "Sjrhdu3485";
-        String targetDB = "shipping";
+        String targetDB = "lessonschedule";
         String tablefile = "Tables";
         String usersfile = "Users and Roles";
         ArrayList<String> tables = new ArrayList<String>();
@@ -46,7 +46,8 @@ public class SQLMapper {
         //userList = findUsers(conn, targetDB);
         tablePriveleges = findTabPriv(conn, targetDB, userList);
         //rolePriveleges = findRolePriv(conn, targetDB);
-        CreateTableCSV(tables, dbcolumns, tableConstraints);
+        CreateTableCSV(targetDB, tables, dbcolumns, tableConstraints);
+        drawioCSV(targetDB, tables, dbcolumns, tableConstraints);
         
     }
     
@@ -243,11 +244,16 @@ public class SQLMapper {
                 ResultSet rs1 = stmt.executeQuery(keyQuery+ tables.get(ts)+ "';" );
 
                 while(rs1.next()){
-                    constraints.put(tables.get(ts)+ "-" +tick+ "-Constraint Name", rs1.getString("CONSTRAINT_NAME"));
-                    constraints.put(tables.get(ts)+ "-" +tick+ "-Column Name", rs1.getString("COLUMN_NAME"));
-                    constraints.put(tables.get(ts)+ "-" +tick+ "-Referenced Table", rs1.getString("REFERENCED_TABLE_NAME"));
-                    constraints.put(tables.get(ts)+ "-" +tick+ "-Referenced Column", rs1.getString("REFERENCED_COLUMN_NAME"));
-                tick++;
+                    String test = rs1.getString("CONSTRAINT_NAME");
+                    if(rs1.wasNull()){
+                        continue;
+                    }else{
+                        constraints.put(tables.get(ts)+ "-" +tick+ "-Constraint Name", rs1.getString("CONSTRAINT_NAME"));
+                        constraints.put(tables.get(ts)+ "-" +tick+ "-Column Name", rs1.getString("COLUMN_NAME"));
+                        constraints.put(tables.get(ts)+ "-" +tick+ "-Referenced Table", rs1.getString("REFERENCED_TABLE_NAME"));
+                        constraints.put(tables.get(ts)+ "-" +tick+ "-Referenced Column", rs1.getString("REFERENCED_COLUMN_NAME"));
+                        tick++;
+                    }
                 }
                 rs1.close();
                 constraints.put(tables.get(ts)+ "-Total", Integer.toString(tick - 1));
@@ -255,12 +261,17 @@ public class SQLMapper {
                 ResultSet rs2= stmt.executeQuery(constQuery1+ tables.get(ts)+ constQuery2);
 
                 while(rs2.next()){
-                    constraints.put(tables.get(ts)+ "-" +tick2+ "-Constraint Schema", rs2.getString("CONSTRAINT_SCHEMA"));
-                    constraints.put(tables.get(ts)+ "-" +tick2+ "-Constraint Name2", rs2.getString("CONSTRAINT_NAME"));
-                    constraints.put(tables.get(ts)+ "-" +tick2+ "-Table Schema", rs2.getString("TABLE_SCHEMA"));
-                    constraints.put(tables.get(ts)+ "-" +tick2+ "-Constraint Type", rs2.getString("CONSTRAINT_TYPE"));
-                    constraints.put(tables.get(ts)+ "-" +tick2+ "-Enforced", rs2.getString("ENFORCED"));
-                tick2++;
+                    String test2 = rs2.getString("CONSTRAINT_NAME");
+                    if(rs2.wasNull()){
+                        continue;
+                    }else{
+                        constraints.put(tables.get(ts)+ "-" +tick2+ "-Constraint Schema", rs2.getString("CONSTRAINT_SCHEMA"));
+                        constraints.put(tables.get(ts)+ "-" +tick2+ "-Constraint Name2", rs2.getString("CONSTRAINT_NAME"));
+                        constraints.put(tables.get(ts)+ "-" +tick2+ "-Table Schema", rs2.getString("TABLE_SCHEMA"));
+                        constraints.put(tables.get(ts)+ "-" +tick2+ "-Constraint Type", rs2.getString("CONSTRAINT_TYPE"));
+                        constraints.put(tables.get(ts)+ "-" +tick2+ "-Enforced", rs2.getString("ENFORCED"));
+                        tick2++;
+                    }
                 }
                 rs2.close();
                 constraints.put(tables.get(ts)+ "-Total2", Integer.toString(tick2 - 1));
@@ -288,7 +299,7 @@ public class SQLMapper {
             while(rs1.next()){
                 userList.put("Host-" +tick, rs1.getString("Host"));
                 userList.put("User-" +tick, rs1.getString("User"));
-              userList.put("Select-" +tick, rs1.getString("Select_priv"));
+                userList.put("Select-" +tick, rs1.getString("Select_priv"));
                 userList.put("Insert-" +tick, rs1.getString("Insert_priv"));
                 userList.put("Update-" +tick, rs1.getString("Update_priv"));
                 userList.put("Delete-" +tick, rs1.getString("Delete_priv"));
@@ -362,13 +373,13 @@ public class SQLMapper {
         return tablePriv;
     }
     
-    public static void CreateTableCSV(ArrayList tables, TreeMap<String, String> columns, TreeMap<String, String> constraints){
+    public static void CreateTableCSV(String TargetDB, ArrayList tables, TreeMap<String, String> columns, TreeMap<String, String> constraints){
         FileWriter fileOut = null;
-        String filename="Tables.csv";
+        String filename=TargetDB+ "Tables.csv";
         try{
             fileOut = new FileWriter(filename);
             
-            for(int ts=0; ts<tables.size()-1; ts++){
+            for(int ts=0; ts<tables.size(); ts++){
                 int colnum=Integer.parseInt(columns.get(tables.get(ts)+"-Total"));
                 fileOut.append("\n" +tables.get(ts)+ " Columns\n");
                 fileOut.append("Column Name, Data Type, Default Value, Null Allowed, Key Type, Extra\n");
@@ -406,6 +417,73 @@ public class SQLMapper {
              
             try{
                 fileOut.flush();
+                fileOut.close();
+            }catch(IOException e){
+                System.out.println("Error while flushing/closing fileWriter !!!");
+                e.printStackTrace();
+            }
+        }
+    }
+    public static void drawioCSV(String TargetDB, ArrayList tables, TreeMap<String, String> columns, TreeMap<String, String> constraints){
+        FileWriter fileOut = null;
+        String filename=TargetDB+ "DrawIOImport.csv";
+        try{
+            fileOut = new FileWriter(filename);
+            fileOut.append("##shipping export\n" +
+                    "##\n" +
+                    "## Go to https://www.draw.io/ and start a new diagram. Select Arrange>Insert>Advanced>CSV... and copy and paste everything below this line then select Import\n" +
+                    "##\n" +
+                    "# label: <div style=\"alignContent:space-between;\"><b style=\"font-size:x-large; border-bottom-color:black; border-bottom-style:solid;\">%Table%</b><br><br>%ColumnName%" +
+                    "<br>%ColumnName2%<br>%ColumnName3%<br>%ColumnName4%<br>%ColumnName5%<br>%ColumnName6%<br>%ColumnName7%<br>%ColumnName8%</div>\n" +
+                    "# style: label;shape=rectangle;whiteSpace=wrap;html=1;rounded=1;\n" +
+                    "# parentstyle: swimlane;whiteSpace=wrap;html=1;childLayout=stackLayout;horizontal=1;horizontalStack=0;resizeParent=1;resizeLast=0;collapsible=1;\n" +
+                    "# connect: {\"from\": \"ReferencedTable\", \"to\": \"Table\", \"invert\": true, \"style\": \"rounded=1;endArrow=blockThin;endFill=1; fontSize=11;\"}\n" +
+                    "# width: auto\n" +
+                    "# height: 180\n" +
+                    "#padding: 30\n" +
+                    "# nodespacing: 40\n" +
+                    "# levelspacing: 100\n" +
+                    "# edgespacing: 40\n" +
+                    "# layout: verticalflow\n" +
+                    "## ---- CSV below this line. First line is column names. ----\n" +
+                    "Table,ColumnName,ColumnName2,ColumnName3,ColumnName4,ColumnName5,ColumnName6,ColumnName7,ColumnName8,ReferencedTable\n");
+            
+            for(int ts=0; ts<tables.size(); ts++){
+                int colnum=Integer.parseInt(columns.get(tables.get(ts)+"-Total"));
+                fileOut.append(tables.get(ts)+",");
+                int commacount=1;
+                for(int cs=1 ; cs<=colnum && cs<=8 ; cs++){
+                    fileOut.append(columns.get(tables.get(ts)+ "-" +cs+ "-Field") +",");
+                commacount++;
+                }
+                
+                if(commacount<8){
+                    for(int cc =commacount; cc<=8 ;cc++){
+                        fileOut.append(",");
+                    }
+                }
+                
+                int constnum1=Integer.parseInt(constraints.get(tables.get(ts)+ "-Total"));
+                ArrayList<String> reference = new ArrayList<String>();
+                String fullRef = "";
+                
+                for(int cs=1; cs<= constnum1; cs++){
+                        reference.add(constraints.get(tables.get(ts)+ "-" +cs+ "-Referenced Table"));
+                }
+                
+                for(int as=0; as<reference.size()-1; as++){
+                    fullRef=fullRef + reference.get(as) + ",";
+                }
+                fileOut.append("\"" +fullRef+ "\",\n");
+            }
+        }catch(Exception e){
+            System.out.println("Error in CsvFileWriter !!!");
+            e.printStackTrace();
+        }finally {
+            try{
+                fileOut.flush();
+                
+                
                 fileOut.close();
             }catch(IOException e){
                 System.out.println("Error while flushing/closing fileWriter !!!");
