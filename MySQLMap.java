@@ -21,18 +21,12 @@ public class MySQLMap {
         TreeMap<String, String> dbcolumns = new TreeMap();
         TreeMap<String, String> rolePriveleges = new TreeMap();
         TreeMap<String, String> tableConstraints = new TreeMap();
-        TreeMap<String, String> userList = new TreeMap();
-        TreeMap<String, String> roles = new TreeMap();
-        TreeMap<String, String> tablePriveleges = new TreeMap();
     
         Connection conn = dbconnect(connectInfo);
         tables = findTables(conn, connectInfo);
         dbcolumns = findColumns(conn, connectInfo, tables);
         tableKeys = findKeys(conn, connectInfo, tables);
         tableConstraints = findConst(conn, connectInfo, tables);
-        //userList = findUsers(conn, targetDB);
-        tablePriveleges = findTabPriv(conn, connectInfo, userList);
-        //rolePriveleges = findRolePriv(conn, targetDB);
         CreateTableCSV(connectInfo, tables, dbcolumns, tableKeys, tableConstraints);
         drawioCSV(connectInfo, tables, dbcolumns, tableKeys);
     }
@@ -200,91 +194,6 @@ public class MySQLMap {
             e.printStackTrace();
         }
         return constraints;
-    }
-
-    public static TreeMap<String,String> findUsers (Connection conn, HashMap<String, String> connectInfo){
-        TreeMap<String, String> userList = new TreeMap();
-        String userQuery = "SELECT * FROM MYSQL.USER WHERE User != 'mysql.infoschema' AND User != 'mysql.session' AND User != 'mysql.sys';";
-        int tick=1;
-        try{
-            Statement stmt = conn.createStatement();
-            ResultSet rs1=stmt.executeQuery(userQuery);
-
-            while(rs1.next()){
-                userList.put("Host-" +tick, rs1.getString("Host"));
-                userList.put("User-" +tick, rs1.getString("User"));
-                userList.put("Select-" +tick, rs1.getString("Select_priv"));
-                userList.put("Insert-" +tick, rs1.getString("Insert_priv"));
-                userList.put("Update-" +tick, rs1.getString("Update_priv"));
-                userList.put("Delete-" +tick, rs1.getString("Delete_priv"));
-                userList.put("Create-" +tick, rs1.getString("Create_priv"));
-                userList.put("Drop-" +tick, rs1.getString("Drop_priv"));
-                userList.put("Reload-" +tick, rs1.getString("Reload_priv"));
-                userList.put("Shutdown-" +tick, rs1.getString("Shutdown_priv"));
-                userList.put("Process-" +tick, rs1.getString("Process_priv"));
-                userList.put("File-" +tick, rs1.getString("File_priv"));
-                userList.put("Grant-" +tick, rs1.getString("Grant_priv"));
-                userList.put("Index-" +tick, rs1.getString("Index_priv"));
-                userList.put("Alter-" +tick, rs1.getString("Alter_priv"));
-                userList.put("Show DB-" +tick, rs1.getString("Show_db_priv"));
-                userList.put("Super-" +tick, rs1.getString("Super_priv"));
-                userList.put("Lock Tables-" +tick, rs1.getString("Lock_tables_priv"));
-                userList.put("Execute-" +tick, rs1.getString("Execute_priv"));
-                userList.put("Replicate Slave-" +tick, rs1.getString("Repl_slave_priv"));
-                userList.put("PLicate Client-" +tick, rs1.getString("Repl_client_priv"));
-                userList.put("Create View-" +tick, rs1.getString("Create_view_priv"));
-                userList.put("Show View-" +tick, rs1.getString("Show_view_priv"));
-                userList.put("Create Routine-" +tick, rs1.getString("Create_routine_priv"));
-                userList.put("Alter Routine-" +tick, rs1.getString("Alter_routine_priv"));
-                userList.put("Create User-" +tick, rs1.getString("Create_user_priv"));
-                userList.put("Max Connections-" +tick, rs1.getString("max_connections"));
-                
-                tick++;
-            }
-            
-            
-            rs1.close();
-            stmt.close();
-
-        }catch(SQLException se){
-            se.printStackTrace();
-        }catch(Exception e){
-            e.printStackTrace();
-        }
-        System.out.println("User List: " +userList);
-        return userList;
-    }
-
-    public static TreeMap<String, String> findTabPriv (Connection conn, HashMap<String, String> connectInfo, TreeMap<String, String> users){
-        TreeMap<String, String> tablePriv = new TreeMap();
-        String tabPrivQuery = "SHOW GRANTS FOR ";
-        ResultSet rs1;
-        int tick=1;
-        int secTick=1;
-        try{
-            Statement stmt = conn.createStatement();
-            for(int ts =0; ts<=users.size()-1; ts++){
-                while(users.get("User-" +tick)!= "null"){
-                    rs1=stmt.executeQuery("SHOW GRANTS FOR '" +users.get("User-" +tick)+ "'@'" +users.get("Host-" +tick)+ "';");
-
-                    while(rs1.next()){
-                        tablePriv.put(users.get("User-" +tick)+ "-" +secTick, rs1.getString("Grants for " +users.get("User-" +tick)+ "@" +users.get("Host-" +tick)));
-                        secTick++;
-                    }
-                    rs1.close();
-                }
-                tick++;
-            }
-            stmt.close();
-            conn.close();
-            
-            System.out.println("Table Privileges: " +tablePriv);
-        }catch(SQLException se){
-            se.printStackTrace();
-        }catch(Exception e){
-            e.printStackTrace();
-        }
-        return tablePriv;
     }
     
     public static void CreateTableCSV(HashMap<String, String> connectInfo, ArrayList tables, TreeMap<String, String> columns, TreeMap<String, String> keys, TreeMap<String, String> constraints){
