@@ -1,3 +1,5 @@
+//BE ADVISED this portion of the application is not complete and has not been tested.
+
 package sqlmapper;
 
 import java.util.TreeMap;
