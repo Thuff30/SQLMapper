@@ -1,4 +1,4 @@
-This is a simple Java application that will create a CSV listing pertinent MySQL or MS SQL database information as well as a file that can be imported into Draw.io to create a basic ERD. Currently the MS SQL portion is nearly finished and has not been tested, however the My SQL portions is fully functional.
+This is a simple Java application that will create a CSV listing pertinent MySQL or MS SQL database information as well as a file that can be imported into Draw.io to create a basic ERD. Currently the MS SQL portion is nearly finished, however the My SQL portions is fully functional.
 
 The application relies on JDBC drivers mssql-jdbc-8.2.2.jre8.jar and mysql-connector-java-8.0.18.jar(included in the files). These must be configured in the root folder for the source files.
 
