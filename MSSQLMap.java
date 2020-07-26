@@ -1,6 +1,4 @@
-//BE ADVISED this portion of the application is not complete and has not been tested.
-
-package sqlmapper;
+//BE ADVISED this portion of the application is not complete.
 
 import java.util.TreeMap;
 import java.util.HashMap;
@@ -31,7 +29,7 @@ public class MSSQLMap {
         dbcolumns = findColumns(conn, connectInfo, tables);
         tableKeys = findKeys(conn, connectInfo, tables);
         tableConstraints = findConst(conn, connectInfo, tables);
-        //CreateTableCSV(connectInfo, tables, dbcolumns, tableKeys, tableConstraints);
+        CreateTableCSV(connectInfo, tables, dbcolumns, tableKeys, tableConstraints);
         //DrawioCSV(connectInfo, tables, dbcolumns, tableKeys);
     }
     
@@ -62,7 +60,6 @@ public class MSSQLMap {
         
         try{
             Statement stmt = conn.createStatement();
-            stmt.executeQuery(useDB);
             ResultSet rs1 = stmt.executeQuery(showTables);
             
             while(rs1.next()){
@@ -85,7 +82,6 @@ public class MSSQLMap {
         
         try{
             Statement stmt = conn.createStatement();
-            stmt.executeQuery(useDB);
             
             for(int ts=0; ts<=tables.size()-1; ts++){
                 ResultSet rs1 = stmt.executeQuery("SELECT COLUMN_NAME, DATA_TYPE, COLUMN_DEFAULT, IS_NULLABLE FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = '" +tables.get(ts)+ "';");
@@ -119,7 +115,6 @@ public class MSSQLMap {
         
         try{
             Statement stmt = conn.createStatement();
-            stmt.executeQuery(useDB);
                 ResultSet rs1 = stmt.executeQuery(keyQuery);
                 while(rs1.next()){
                     String test = rs1.getString("UNIQUE_CONSTRAINT_NAME");
@@ -151,7 +146,6 @@ public class MSSQLMap {
        
         try{
             Statement stmt = conn.createStatement();
-            stmt.executeQuery(useDB);
             for (int ts=0; ts<=tables.size()-1;ts++){
                 ResultSet rs1= stmt.executeQuery(constQuery1+ tables.get(ts)+ "';");
                 
@@ -188,7 +182,7 @@ public class MSSQLMap {
             fileOut = new FileWriter(filename);
             
             for(int ts=0; ts<tables.size(); ts++){
-                int colnum= Integer.parseInt(columns.get(tables.get(ts)+ "-Totl"));
+                int colnum = Integer.parseInt(columns.get(tables.get(ts)+ "-Total"));
                 fileOut.append("\n" +tables.get(ts)+ "Columns\n");
                 fileOut.append("Column_Name, Data_Type, Default_Value, Null_Allowed\n");
                 
