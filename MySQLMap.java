@@ -145,7 +145,6 @@ public class MySQLMap {
         }catch(Exception e){
             e.printStackTrace();
         }
-        System.out.println("Table Keys:" +keys);
         return keys;
     }
     
@@ -182,7 +181,6 @@ public class MySQLMap {
                 counter=1;
             }
             stmt.close();
-            System.out.println("Constraints: " +constraints);
         }catch(SQLException se){
             se.printStackTrace();
         }catch(Exception e){
@@ -214,7 +212,6 @@ public class MySQLMap {
                             columns.get(tables.get(ts)+ "-" +cs+ "-Extra") +"\n");
                 }
                 int constnum1=Integer.parseInt(keys.get(tables.get(ts)+ "-Total"));
-                System.out.println(constnum1);
                 fileOut.append("\n" +tables.get(ts)+ " Keys\nConstraint Name, Column Name, Referenced Column, Referenced Table\n");
                 for(int cs=1; cs<= constnum1; cs++){
                     fileOut.append(keys.get(tables.get(ts)+ "-" +loopCount+ "-Constraint Name")+ "," +
@@ -224,7 +221,6 @@ public class MySQLMap {
                     loopCount++;
                 }
                 int constnum2 = Integer.parseInt(constraints.get(tables.get(ts)+ "-Total"));
-                System.out.println(constnum2);
                 fileOut.append("\n"+ tables.get(ts)+ " Constraints\nConstraint Name, Constraint Type, Enforced, Constraint Schema, Constraint Table\n");
                 for(int cs=1; cs<=constnum2; cs++){
                     fileOut.append(constraints.get(tables.get(ts)+ "-" +loopCount2+ "-Constraint Name2")+ "," +
@@ -297,7 +293,6 @@ public class MySQLMap {
                         reference.add(keys.get(tables.get(ts)+ "-" +loopCount+ "-Referenced Table"));
                         loopCount++;                                            
                 }
-                System.out.println(reference);
                 for(int as=1; as<=reference.size()-1; as++){
                     fullRef=fullRef + reference.get(as) + ",";
                 }
