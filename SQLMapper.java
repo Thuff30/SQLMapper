@@ -17,8 +17,7 @@ public class SQLMapper {
                 break;
             case "mssql":
                 MSSQLMap msmap = new MSSQLMap();
-                msmap.MapDB(connectInfo);
-                break;          
+                msmap.MapDB(connectInfo);       
         } 
     }
     
