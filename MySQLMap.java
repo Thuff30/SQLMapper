@@ -1,6 +1,4 @@
-import java.util.TreeMap;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.ArrayList;
 import java.util.List;
 import java.sql.*;
@@ -12,14 +10,12 @@ import java.io.IOException;
 public class MySQLMap {
     
     public static void MapDB(HashMap <String, String> connectInfo){
-        String targetDB = "lessonschedule";
         ArrayList<String> tables = new ArrayList<String>();
         HashMap<String, String> dboptions = new HashMap();
-        TreeMap<String, String> tableKeys = new TreeMap();
-        TreeMap<String, String> dbcolumns = new TreeMap();
-        TreeMap<String, String> rolePriveleges = new TreeMap();
-        TreeMap<String, String> tableConstraints = new TreeMap();
-    
+        HashMap<String, String> tableKeys = new HashMap();
+        HashMap<String, String> dbcolumns = new HashMap();
+        HashMap<String, String> tableConstraints = new HashMap();
+            
         Connection conn = dbconnect(connectInfo);
         tables = findTables(conn, connectInfo);
         dbcolumns = findColumns(conn, connectInfo, tables);
@@ -28,6 +24,7 @@ public class MySQLMap {
         CreateTableCSV(connectInfo, tables, dbcolumns, tableKeys, tableConstraints);
         drawioCSV(connectInfo, tables, dbcolumns, tableKeys);
     }
+    
     //Create connection to database
     public static Connection dbconnect(HashMap<String, String> connectInfo){
         String JDBCDRIVER_MYSQL = "com.mysql.cj.jdbc.Driver";
@@ -73,8 +70,8 @@ public class MySQLMap {
     }
 
     //Search for all tables in selected database    
-    public static TreeMap<String, String> findColumns(Connection conn, HashMap<String,String> connectInfo, ArrayList tables){
-        TreeMap<String, String> columns = new TreeMap();
+    public static HashMap<String, String> findColumns(Connection conn, HashMap<String,String> connectInfo, ArrayList tables){
+        HashMap<String, String> columns = new HashMap();
         String useDB = "USE " +connectInfo.get("Database")+ ";";
 
             try{
@@ -114,8 +111,8 @@ public class MySQLMap {
         return columns;
     }
 
-    public static TreeMap<String, String> findKeys(Connection conn, HashMap<String, String> connectInfo, ArrayList tables){
-        TreeMap<String, String> keys = new TreeMap();
+    public static HashMap<String, String> findKeys(Connection conn, HashMap<String, String> connectInfo, ArrayList tables){
+        HashMap<String, String> keys = new HashMap();
         String keyQuery = "SELECT CONSTRAINT_NAME, COLUMN_NAME, REFERENCED_TABLE_NAME, REFERENCED_COLUMN_NAME FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE WHERE TABLE_NAME='";
         String useDB = "USE " +connectInfo.get("Database")+ ";";
         int tick =1;
@@ -152,8 +149,8 @@ public class MySQLMap {
         return keys;
     }
     
-    public static TreeMap<String, String> findConst(Connection conn, HashMap<String, String> connectInfo, ArrayList tables){
-        TreeMap<String, String> constraints = new TreeMap<String, String>();        
+    public static HashMap<String, String> findConst(Connection conn, HashMap<String, String> connectInfo, ArrayList tables){
+        HashMap<String, String> constraints = new HashMap();        
         String constQuery1 = "SELECT CONSTRAINT_SCHEMA, CONSTRAINT_NAME, TABLE_SCHEMA, CONSTRAINT_TYPE, ENFORCED FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS WHERE TABLE_NAME='";
         String constQuery2= "' AND CONSTRAINT_TYPE != 'PRIMARY KEY' OR 'FOREIGN KEY';";
         String useDB = "USE " +connectInfo.get("Database")+ ";";
@@ -193,8 +190,8 @@ public class MySQLMap {
         }
         return constraints;
     }
-    
-    public static void CreateTableCSV(HashMap<String, String> connectInfo, ArrayList tables, TreeMap<String, String> columns, TreeMap<String, String> keys, TreeMap<String, String> constraints){
+
+    public static void CreateTableCSV(HashMap<String, String> connectInfo, ArrayList tables, HashMap<String, String> columns, HashMap<String, String> keys, HashMap<String, String> constraints){
         FileWriter fileOut = null;
         int loopCount=1;
         int loopCount2=1;
@@ -252,7 +249,7 @@ public class MySQLMap {
             }
         }
     }
-    public static void drawioCSV(HashMap<String, String> connectInfo, ArrayList tables, TreeMap<String, String> columns, TreeMap<String, String> keys){
+    public static void drawioCSV(HashMap<String, String> connectInfo, ArrayList tables, HashMap<String, String> columns, HashMap<String, String> keys){
         int loopCount=1;
         FileWriter fileOut = null;
         String filename=connectInfo.get("Database")+ "DrawIOImport.csv";
@@ -297,29 +294,19 @@ public class MySQLMap {
                 String fullRef = "";
                 
                 for(int cs=1; cs<= constnum1; cs++){
-                    /*if(keys.get(tables.get(ts)+ "-" +loopCount+ "-Constraint Name")!="PRIMARY"){
-                        loopCount++;
-                        continue;
-                    }else{*/
                         reference.add(keys.get(tables.get(ts)+ "-" +loopCount+ "-Referenced Table"));
-                        loopCount++;                        
-                    //}
-                    
+                        loopCount++;                                            
                 }
                 System.out.println(reference);
                 for(int as=1; as<=reference.size()-1; as++){
                     fullRef=fullRef + reference.get(as) + ",";
                 }
-                //if(reference.size()>1){
                     fileOut.append("\"" +fullRef+ "\",\n");
-                /*}else{
-                    fileOut.append(fullRef+ ",\n");
-                }*/
             }
         }catch(Exception e){
             System.out.println("Error in CsvFileWriter !!!");
             e.printStackTrace();
-        }finally {
+        }finally{
             try{
                 fileOut.flush();
                 
