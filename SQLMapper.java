@@ -1,8 +1,4 @@
-import java.util.TreeMap;
 import java.util.HashMap;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Collections;
 import java.util.Scanner;
 import java.io.IOException;
 
@@ -22,9 +18,7 @@ public class SQLMapper {
             case "mssql":
                 MSSQLMap msmap = new MSSQLMap();
                 msmap.MapDB(connectInfo);
-                break;
-            case "oraclpe sql":
-                break;            
+                break;          
         } 
     }
     
@@ -35,7 +29,7 @@ public class SQLMapper {
         HashMap<String, String> connectInfo = new HashMap();
         Scanner userIn = new Scanner(System.in);
         
-        System.out.println("Is the databse MySQL, MSSQL, or Oracle SQL?");
+        System.out.println("Is the databse MySQL or MSSQL?");
         dbType = userIn.nextLine().toLowerCase();
         connectInfo.put("DBType", dbType);
         System.out.println("Enter the hostname for the database:");
@@ -58,9 +52,6 @@ public class SQLMapper {
                 break;
             case "mssql":
                 URL = "jdbc:sqlserver://" +host+ ":" +port+ ";databaseName=" +database+ ";user=" +user+ ";password=" +pass;
-                break;
-            case "oracle sql":
-                URL = "jdbc:oracle:thin:@" +host+ ":" +port+ ":" +database;
                 break;
             default:
                 URL = null;
