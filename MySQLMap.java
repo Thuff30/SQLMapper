@@ -139,6 +139,7 @@ public class MySQLMap {
                 }
                 rs1.close();
                 keys.put(tables.get(ts)+ "-Total", Integer.toString(counter - 1));
+                counter =1;
                     }
         }catch(SQLException se){
             se.printStackTrace();
@@ -304,8 +305,6 @@ public class MySQLMap {
         }finally{
             try{
                 fileOut.flush();
-                
-                
                 fileOut.close();
             }catch(IOException e){
                 System.out.println("Error while flushing/closing fileWriter !!!");
