@@ -5,42 +5,106 @@ import java.sql.*;
 import java.util.Collections;
 import java.util.Scanner;
 import java.io.FileWriter;
+import java.io.BufferedReader;
+import java.io.FileReader;
 import java.io.IOException;
+import java.awt.*;
+import java.net.URI;
+import java.net.URISyntaxException;
+import javax.swing.*;
 
 public class MSSQLMap {
     
-    public static void MapDB(HashMap<String, String> connectInfo){
+    MSSQLMap(){
+        
+}
+    public static void MapDB(HashMap<String, String> connectInfo, String directory){
         ArrayList<String> tables = new ArrayList<String>();
         HashMap<String, String> dboptions = new HashMap();
         HashMap<String, String> tableKeys = new HashMap();
         HashMap<String, String> dbcolumns = new HashMap();
         HashMap<String, String> tableConstraints = new HashMap();
+        String filename=directory+ "\\" +connectInfo.get("Database")+ "_DrawIOImport.csv";
+        JFrame status = new JFrame("MS SQL Database");
+        JFrame errFrame = new JFrame();
+        JPanel top = new JPanel();
+        JPanel button = new JPanel();
+        JTextArea output = new JTextArea(600,600);
+
+        JButton page = new JButton("Draw.io");
+        top.add(output);
+        button.add(page);
+        status.setLayout(new BorderLayout());
+        status.getContentPane().add(output, BorderLayout.CENTER);
+        status.getContentPane().add(page, BorderLayout.SOUTH);
+        status.setSize(1000,950);
+        status.setLocation(425,50);
+        status.setVisible(true);
         
+        output.setEditable(false);
+        page.addActionListener(e->{
+            Desktop desk = java.awt.Desktop.getDesktop();
+            try{
+                URI thisURL = new URI("https://app.diagrams.net");
+                desk.browse(thisURL);
+            }catch(URISyntaxException uriError){
+                JOptionPane.showMessageDialog(errFrame, uriError.getMessage(), "Web Browser Error", JOptionPane.ERROR_MESSAGE);
+            }catch(IOException ioError){
+                JOptionPane.showMessageDialog(errFrame, ioError.getMessage(), "Web Browser Error", JOptionPane.ERROR_MESSAGE);
+            } 
+        });
+            
+        output.append("Connecting to the server and database provided...\n");
         Connection conn = dbconnect(connectInfo);
-        tables = findTables(conn, connectInfo);
-        dbcolumns = findColumns(conn, connectInfo, tables);
-        tableKeys = findKeys(conn, connectInfo, tables);
-        tableConstraints = findConst(conn, connectInfo, tables);
-        CreateTableCSV(connectInfo, tables, dbcolumns, tableKeys, tableConstraints);
-        drawioCSV(connectInfo, tables, dbcolumns, tableKeys);
+        if(conn!= null){
+            output.append("Connection to " +connectInfo.get("Database")+ " established...\n");
+
+            output.append("Gatheting information on all tables...\n");
+            tables = findTables(conn, connectInfo); 
+            
+            output.append("Collecting a list of all columns...\n");
+            dbcolumns = findColumns(conn, connectInfo, tables);
+            
+            output.append("Noting table keys...\n");
+            tableKeys = findKeys(conn, connectInfo, tables);
+            
+            output.append("Querying for table contraints...\n");
+            tableConstraints = findConst(conn, connectInfo, tables);
+            
+            output.append("Writing CSV containing details of all tables...\n");
+            CreateTableCSV(connectInfo, tables, dbcolumns, tableKeys, tableConstraints, directory);
+            
+            output.append("Creating CSV file for upload to draw.io...\n");
+            drawioCSV(connectInfo, tables, dbcolumns, tableKeys, directory);
+            output.append("Database successfully mapped.\n Terminating connection...\n\n\n"+
+                "Click on the Draw.io buttong below to https://www.draw.io/ and start a new diagram.\n" +
+                "Select Arrange>Insert>Advanced>CSV... and copy and paste everything below this line then select Import\n\n");
+            try{
+                BufferedReader read = new BufferedReader(new FileReader(filename));
+                String line;
+                while((line = read.readLine()) != null){
+                    output.append(line+ "\n");
+                }
+                read.close();
+            }catch(IOException err){
+                JOptionPane.showMessageDialog(errFrame, err.getMessage(), "File Reader Error", JOptionPane.ERROR_MESSAGE);
+            }
+            
+        }else{
+            output.append("Connection failed. Please review database information provided");
+        }
     }
     
     //Create connection to database
     public static Connection dbconnect(HashMap<String, String> connectInfo){
         Connection conn = null;
-        
+        JFrame errFrame = new JFrame();
         try{
-            System.out.println("Connecting to the server and database provided...");
             conn = DriverManager.getConnection(connectInfo.get("URL"));
-            if(conn!=null){
-                System.out.println("Database connection successful.");
-            }else{
-                System.out.println("Connection failed. Please verify the information provided");
-            }
         }catch(SQLException se){
-            se.printStackTrace();
+             JOptionPane.showMessageDialog(errFrame, "<html><body><p style='width: 200px;'>" +se.getMessage()+ "</p></body></html>", "Databse Connection Error", JOptionPane.ERROR_MESSAGE);
         }catch(Exception e){
-            e.printStackTrace();
+            JOptionPane.showMessageDialog(errFrame, "<html><body><p style='width: 300px;'>" +e.getMessage()+ "</p></body></html>", "Database Connection Error", JOptionPane.ERROR_MESSAGE);
         }
         return conn;
     }
@@ -48,6 +112,7 @@ public class MSSQLMap {
     public static ArrayList<String> findTables(Connection conn, HashMap<String, String> connectInfo){
         ArrayList<String> tables = new ArrayList();
         String showTables = "SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME != 'sysdiagrams';";
+        JFrame errFrame = new JFrame();
         
         try{
             Statement stmt = conn.createStatement();
@@ -59,15 +124,16 @@ public class MSSQLMap {
             rs1.close();
             stmt.close();
         }catch(SQLException se){
-            se.printStackTrace();
+            JOptionPane.showMessageDialog(errFrame, se.getMessage(), "SQL Exception Error", JOptionPane.ERROR_MESSAGE);
         }catch(Exception e){
-            e.printStackTrace();
+            JOptionPane.showMessageDialog(errFrame, e.getMessage(), "An Error Occured", JOptionPane.ERROR_MESSAGE);
         }
         return tables;
     }
     
     public static HashMap<String, String> findColumns(Connection conn, HashMap<String, String> connectInfo, ArrayList tables){
         HashMap<String, String> columns = new HashMap();
+        JFrame errFrame = new JFrame();
         
         try{
             Statement stmt = conn.createStatement();
@@ -88,9 +154,9 @@ public class MSSQLMap {
             }
             stmt.close();
         }catch(SQLException se){
-            se.printStackTrace();
+            JOptionPane.showMessageDialog(errFrame, se.getMessage(), "SQL Exception Error", JOptionPane.ERROR_MESSAGE);
         }catch(Exception e){
-            e.printStackTrace();
+            JOptionPane.showMessageDialog(errFrame, e.getMessage(), "An Error Occured", JOptionPane.ERROR_MESSAGE);
         }
         return columns;
     }
@@ -104,6 +170,7 @@ public class MSSQLMap {
             "AND RC.UNIQUE_CONSTRAINT_NAME = T2.CONSTRAINT_NAME INNER JOIN INFORMATION_SCHEMA.KEY_COLUMN_USAGE KCU2 ON T2.CONSTRAINT_SCHEMA = KCU2.CONSTRAINT_SCHEMA \n" +
             "AND T2.CONSTRAINT_NAME = KCU2.CONSTRAINT_NAME AND KCU.ORDINAL_POSITION = KCU2.ORDINAL_POSITION WHERE  T1.CONSTRAINT_TYPE = 'FOREIGN KEY' AND T1.TABLE_NAME = '";
         int tick =1;
+        JFrame errFrame = new JFrame();
         
         try{
             Statement stmt = conn.createStatement();
@@ -126,9 +193,9 @@ public class MSSQLMap {
             }
             stmt.close();
         }catch(SQLException se){
-            se.printStackTrace();
+            JOptionPane.showMessageDialog(errFrame, se.getMessage(), "SQL Exception Error", JOptionPane.ERROR_MESSAGE);
         }catch(Exception e){
-            e.printStackTrace();
+            JOptionPane.showMessageDialog(errFrame, e.getMessage(), "An Error Occured", JOptionPane.ERROR_MESSAGE);
         }
         return keys;
     }
@@ -138,6 +205,7 @@ public class MSSQLMap {
         String constQuery1 = "SELECT COLUMN_NAME, CONSTRAINT_NAME FROM INFORMATION_SCHEMA.CONSTRAINT_COLUMN_USAGE WHERE TABLE_NAME = '";
         int tick=1;
         int counter=1;
+        JFrame errFrame = new JFrame();
        
         try{
             Statement stmt = conn.createStatement();
@@ -160,18 +228,20 @@ public class MSSQLMap {
             }
             stmt.close();
         }catch(SQLException se){
-            se.printStackTrace();
+            JOptionPane.showMessageDialog(errFrame, se.getMessage(), "SQL Exception Error", JOptionPane.ERROR_MESSAGE);
         }catch(Exception e){
-            e.printStackTrace();
+            JOptionPane.showMessageDialog(errFrame, e.getMessage(), "An Error Occured", JOptionPane.ERROR_MESSAGE);
         }
         return constraints;               
     }
     
-    public static void CreateTableCSV(HashMap<String, String> connectInfo, ArrayList tables, HashMap<String, String> columns, HashMap<String, String> keys, HashMap<String, String> constraints){
+    public static void CreateTableCSV(HashMap<String, String> connectInfo, ArrayList tables, HashMap<String, String> columns, HashMap<String, String> keys, HashMap<String, String> constraints, String directory){
         FileWriter fileOut = null;
         int loopCount =1;
         int loopCount2 =1;
-        String filename =connectInfo.get("Database")+ "Tables.csv";
+        String filename= directory+ "\\" +connectInfo.get("Database")+ "_Tables.csv";
+        JFrame errFrame = new JFrame();
+        
         try{
             fileOut = new FileWriter(filename);
             
@@ -188,6 +258,7 @@ public class MSSQLMap {
                 }
                 int constnum = Integer.parseInt(constraints.get(tables.get(ts)+ "-Total"));
                 fileOut.append("\n" +tables.get(ts)+ " Constraints\nColumn_name, Constraint_Name\n");
+                
                 for (int cs=1; cs<= constnum; cs++){
                     fileOut.append(constraints.get(tables.get(ts)+ "-" +loopCount+ "-Column_Name")+ ","+
                             constraints.get(tables.get(ts)+ "-" +loopCount+ "-Constraint_Name")+ "\n");
@@ -195,35 +266,32 @@ public class MSSQLMap {
                 }
                 int keysSize = Integer.parseInt(keys.get(tables.get(ts)+ "-Total"));
                 fileOut.append("\n" +tables.get(ts)+ " Referential Keys\nColumn,Referenced Table,Referenced Column\n");
+                
                 for(int cs=1; cs<=keysSize; cs++){
                     fileOut.append(keys.get(tables.get(ts)+ "-" +loopCount2+ "-PrimaryColumn")+ ","+
                             keys.get(tables.get(ts)+ "-" +loopCount2+ "-ForeignTable")+ ","+
                             keys.get(tables.get(ts)+ "-" +loopCount2+ "-ForeignColumn")+ "\n");
                     loopCount2++;
-            }
+                }
             }
             
-
         }catch(Exception e){
-            System.out.println("Error in CsvFileWriter !!!");
-            e.printStackTrace();
+            JOptionPane.showMessageDialog(errFrame, e.getMessage(), "An Error Occured", JOptionPane.ERROR_MESSAGE);
         }finally {
             try{
                 fileOut.flush();
                 fileOut.close();
             }catch(IOException e){
-                System.out.println("Error while flushing/closing fileWriter !!!");
-                e.printStackTrace();
+                JOptionPane.showMessageDialog(errFrame, e.getMessage(), "File Writer Error", JOptionPane.ERROR_MESSAGE);
             }
         }
     }
 
-        public static void drawioCSV(HashMap<String, String> connectInfo, ArrayList tables, HashMap<String, String> columns, HashMap<String, String> keys){
+        public static void drawioCSV(HashMap<String, String> connectInfo, ArrayList tables, HashMap<String, String> columns, HashMap<String, String> keys, String directory){
         FileWriter fileOut = null;
-        String filename=connectInfo.get("Database")+ "DrawIOImport.csv";
-        try{
-            fileOut = new FileWriter(filename);
-            fileOut.append("##shipping export\n" +
+        JFrame errFrame = new JFrame();
+        String filename=directory+ "\\" +connectInfo.get("Database")+ "_DrawIOImport.csv";
+        String fileHeader = "##shipping export\n" +
                     "##\n" +
                     "## Go to https://www.draw.io/ and start a new diagram. Select Arrange>Insert>Advanced>CSV... and copy and paste everything below this line then select Import\n" +
                     "##\n" +
@@ -240,12 +308,17 @@ public class MSSQLMap {
                     "# edgespacing: 40\n" +
                     "# layout: verticalflow\n" +
                     "## ---- CSV below this line. First line is column names. ----\n" +
-                    "Table,ColumnName,ColumnName2,ColumnName3,ColumnName4,ColumnName5,ColumnName6,ColumnName7,ColumnName8,ReferencedTable\n");
+                    "Table,ColumnName,ColumnName2,ColumnName3,ColumnName4,ColumnName5,ColumnName6,ColumnName7,ColumnName8,ReferencedTable\n";
+        
+        try{
+            fileOut = new FileWriter(filename);
+            fileOut.append(fileHeader);
             
             for(int ts=0; ts<tables.size(); ts++){
                 int colnum=Integer.parseInt(columns.get(tables.get(ts)+"-Total"));                
                 fileOut.append(tables.get(ts)+",");
                 int commacount=0;
+                
                 for(int cs=1 ; cs<=colnum && cs<=8 ; cs++){
                     fileOut.append(columns.get(tables.get(ts)+ "-" +cs+ "-Name") +",");
                 commacount++;
@@ -262,7 +335,6 @@ public class MSSQLMap {
                 String fullRef = "";
                 
                 for(int i=1; i<= keysSize; i++){
-                        System.out.println(keys.get(tables.get(ts)+ "-" +i+ "-PrimaryTable"));
                         reference.add(keys.get(tables.get(ts)+ "-" +i+ "-ForeignTable"));
                 }
                 for(int as=0; as<reference.size(); as++){
@@ -271,17 +343,13 @@ public class MSSQLMap {
                     fileOut.append("\"" +fullRef+ "\",\n");
             }
         }catch(Exception e){
-            System.out.println("Error in CsvFileWriter !!!");
-            e.printStackTrace();
+            JOptionPane.showMessageDialog(errFrame, e.getMessage(), "An Error Occured", JOptionPane.ERROR_MESSAGE);
         }finally {
             try{
-        fileOut.flush();
-                
-                
+                fileOut.flush();
                 fileOut.close();
             }catch(IOException e){
-                System.out.println("Error while flushing/closing fileWriter !!!");
-                e.printStackTrace();
+                JOptionPane.showMessageDialog(errFrame, e.getMessage(), "File Writer Error", JOptionPane.ERROR_MESSAGE);
             }
         }
     }
