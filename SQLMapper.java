@@ -40,7 +40,7 @@ public class SQLMapper {
         database.setColumns(20);
         JTextField user = new JTextField();
         user.setColumns(20);
-        JTextField pass = new JTextField();
+        JPasswordField pass = new JPasswordField();
         pass.setColumns(20);
         
         //Declare all buttons
