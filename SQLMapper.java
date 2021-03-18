@@ -99,7 +99,6 @@ public class SQLMapper {
         main.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         main.setSize(650,200);
         main.setLocation(650,450);
-        main.setBackground(Color.blue);
         main.setVisible(true);
         
         //Action listener to map database
