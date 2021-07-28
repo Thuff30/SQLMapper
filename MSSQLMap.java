@@ -96,7 +96,7 @@ public class MSSQLMap {
     }
     
     //Create connection to database
-    public static Connection dbconnect(HashMap<String, String> connectInfo){
+    private static Connection dbconnect(HashMap<String, String> connectInfo){
         Connection conn = null;
         JFrame errFrame = new JFrame();
         try{
@@ -109,7 +109,7 @@ public class MSSQLMap {
         return conn;
     }
     
-    public static ArrayList<String> findTables(Connection conn, HashMap<String, String> connectInfo){
+    private static ArrayList<String> findTables(Connection conn, HashMap<String, String> connectInfo){
         ArrayList<String> tables = new ArrayList();
         String showTables = "SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME != 'sysdiagrams';";
         JFrame errFrame = new JFrame();
@@ -131,7 +131,7 @@ public class MSSQLMap {
         return tables;
     }
     
-    public static HashMap<String, String> findColumns(Connection conn, HashMap<String, String> connectInfo, ArrayList tables){
+    private static HashMap<String, String> findColumns(Connection conn, HashMap<String, String> connectInfo, ArrayList tables){
         HashMap<String, String> columns = new HashMap();
         JFrame errFrame = new JFrame();
         
@@ -161,7 +161,7 @@ public class MSSQLMap {
         return columns;
     }
     
-    public static HashMap<String, String> findKeys(Connection conn, HashMap<String, String> connectInfo, ArrayList tables){
+    private static HashMap<String, String> findKeys(Connection conn, HashMap<String, String> connectInfo, ArrayList tables){
         HashMap<String, String> keys = new HashMap();
         String keyQuery = "SELECT T1.TABLE_NAME [PKTABLE_NAME], KCU.COLUMN_NAME [PKCOLUMN_NAME], T2.TABLE_NAME [FKTABLE_NAME], KCU2.COLUMN_NAME [FKCOLUMN_NAME] " +
             "FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS T1 INNER JOIN INFORMATION_SCHEMA.KEY_COLUMN_USAGE KCU ON T1.CONSTRAINT_SCHEMA = KCU.CONSTRAINT_SCHEMA \n" +
@@ -200,7 +200,7 @@ public class MSSQLMap {
         return keys;
     }
     
-    public static HashMap<String, String> findConst(Connection conn, HashMap<String, String> connectInfo, ArrayList tables){
+    private static HashMap<String, String> findConst(Connection conn, HashMap<String, String> connectInfo, ArrayList tables){
         HashMap<String, String> constraints = new HashMap();
         String constQuery1 = "SELECT COLUMN_NAME, CONSTRAINT_NAME FROM INFORMATION_SCHEMA.CONSTRAINT_COLUMN_USAGE WHERE TABLE_NAME = '";
         int tick=1;
@@ -235,7 +235,7 @@ public class MSSQLMap {
         return constraints;               
     }
     
-    public static void CreateTableCSV(HashMap<String, String> connectInfo, ArrayList tables, HashMap<String, String> columns, HashMap<String, String> keys, HashMap<String, String> constraints, String directory){
+    private static void CreateTableCSV(HashMap<String, String> connectInfo, ArrayList tables, HashMap<String, String> columns, HashMap<String, String> keys, HashMap<String, String> constraints, String directory){
         FileWriter fileOut = null;
         int loopCount =1;
         int loopCount2 =1;
@@ -287,7 +287,7 @@ public class MSSQLMap {
         }
     }
 
-        public static void drawioCSV(HashMap<String, String> connectInfo, ArrayList tables, HashMap<String, String> columns, HashMap<String, String> keys, String directory){
+        private static void drawioCSV(HashMap<String, String> connectInfo, ArrayList tables, HashMap<String, String> columns, HashMap<String, String> keys, String directory){
         FileWriter fileOut = null;
         JFrame errFrame = new JFrame();
         String filename=directory+ "\\" +connectInfo.get("Database")+ "_DrawIOImport.csv";
