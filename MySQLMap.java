@@ -91,7 +91,7 @@ public class MySQLMap {
     }
     
     //Create connection to database
-    public static Connection dbconnect(HashMap<String, String> connectInfo){
+    private static Connection dbconnect(HashMap<String, String> connectInfo){
         String JDBCDRIVER_MYSQL = "com.mysql.cj.jdbc.Driver";
         Connection conn = null;
         JFrame errFrame = new JFrame();
@@ -111,7 +111,7 @@ public class MySQLMap {
     }
      
     //Find all tables on database
-    public static ArrayList<String> findTables(Connection conn, HashMap<String, String> connectInfo){
+    private static ArrayList<String> findTables(Connection conn, HashMap<String, String> connectInfo){
         ArrayList<String> tables = new ArrayList<String>();
         String useDB = "USE " + connectInfo.get("Database")+ ";";
         String shTables = "SHOW TABLES;";
@@ -137,7 +137,7 @@ public class MySQLMap {
     }
 
     //Search for all tables in selected database    
-    public static HashMap<String, String> findColumns(Connection conn, HashMap<String,String> connectInfo, ArrayList tables){
+    private static HashMap<String, String> findColumns(Connection conn, HashMap<String,String> connectInfo, ArrayList tables){
         HashMap<String, String> columns = new HashMap();
         String useDB = "USE " +connectInfo.get("Database")+ ";";
         JFrame errFrame = new JFrame();
@@ -179,7 +179,7 @@ public class MySQLMap {
         return columns;
     }
 
-    public static HashMap<String, String> findKeys(Connection conn, HashMap<String, String> connectInfo, ArrayList tables){
+    private static HashMap<String, String> findKeys(Connection conn, HashMap<String, String> connectInfo, ArrayList tables){
         HashMap<String, String> keys = new HashMap();
         String keyQuery = "SELECT CONSTRAINT_NAME, COLUMN_NAME, REFERENCED_TABLE_NAME, REFERENCED_COLUMN_NAME FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE WHERE TABLE_NAME='";
         String useDB = "USE " +connectInfo.get("Database")+ ";";
@@ -217,7 +217,7 @@ public class MySQLMap {
         return keys;
     }
     
-    public static HashMap<String, String> findConst(Connection conn, HashMap<String, String> connectInfo, ArrayList tables){
+    private static HashMap<String, String> findConst(Connection conn, HashMap<String, String> connectInfo, ArrayList tables){
         HashMap<String, String> constraints = new HashMap();        
         String constQuery1 = "SELECT CONSTRAINT_SCHEMA, CONSTRAINT_NAME, TABLE_SCHEMA, CONSTRAINT_TYPE, ENFORCED FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS WHERE TABLE_NAME='";
         String constQuery2= "' AND CONSTRAINT_TYPE != 'PRIMARY KEY' OR 'FOREIGN KEY';";
@@ -260,7 +260,7 @@ public class MySQLMap {
         return constraints;
     }
 
-    public static void CreateTableCSV(HashMap<String, String> connectInfo, ArrayList tables, HashMap<String, String> columns, HashMap<String, String> keys, HashMap<String, String> constraints, String directory){
+    private static void CreateTableCSV(HashMap<String, String> connectInfo, ArrayList tables, HashMap<String, String> columns, HashMap<String, String> keys, HashMap<String, String> constraints, String directory){
         FileWriter fileOut = null;
         int loopCount=1;
         int loopCount2=1;
@@ -318,7 +318,7 @@ public class MySQLMap {
             }
         }
     }
-    public static void drawioCSV(HashMap<String, String> connectInfo, ArrayList tables, HashMap<String, String> columns, HashMap<String, String> keys, String directory){
+    private static void drawioCSV(HashMap<String, String> connectInfo, ArrayList tables, HashMap<String, String> columns, HashMap<String, String> keys, String directory){
         int loopCount=1;
         FileWriter fileOut = null;
         JFrame errFrame = new JFrame();
